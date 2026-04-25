@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      # 1. Store persistent data on the host (for development)
+      # - postgres_data:/var/lib/postgresql/data
+      # 2. Crucially, mount the database.sql file for initialization!
+      # The script will be run when the container starts for the *first time*.
+      - ./database.sql:/docker-entrypoint-initdb.d/init.sql
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: my-pgadmin-web
+  #   restart: always
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@example.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin_password
+  #   ports:
+  #     - "1810:80"
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
+  maildev:
+    image: maildev/maildev
+    container_name: maildev
+    ports:
+      # Expose the Web UI to your host machine (http://localhost:1080)
+      - "1080:1080"
+      # Expose the SMTP port to your host machine (optional, but useful for testing)
+      - "587:1025"
+# volumes:
+  # postgres_data:
+  # pgadmin_data:

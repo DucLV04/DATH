@@ -1,0 +1,212 @@
+===============================================
+DATH API - HƯỚNG DẪN TEST API
+===============================================
+
+BASE URL: http://localhost:8080
+
+===============================================
+1. REGISTER USER
+===============================================
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser123",
+  "email": "testuser123@example.com",
+  "password": "Password123!"
+}
+
+Response (201):
+{
+  "message": "User registered successfully! Please check your email to verify."
+}
+
+Ghi chú: Sau khi register, verification token sẽ lưu trong DB
+  Query DB: SELECT email_verification_token FROM users WHERE email = 'testuser123@example.com';
+
+
+===============================================
+2. VERIFY EMAIL
+===============================================
+GET /api/auth/verify?token=<VERIFICATION_TOKEN>
+
+Thay <VERIFICATION_TOKEN> bằng token lấy từ DB ở bước trên
+
+Response (200):
+{
+  "message": "Email verified successfully! You can now log in."
+}
+
+
+===============================================
+3. LOGIN - LẤY TOKEN
+===============================================
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser123@example.com",
+  "password": "Password123!"
+}
+
+Response (200):
+{
+  "id": 1,
+  "username": "testuser123",
+  "email": "testuser123@example.com",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+
+Ghi chú: Lưu accessToken này để gọi các API khác
+
+
+===============================================
+4. FOLLOW USER
+===============================================
+POST /api/follow/<SELLER_ID>/follow
+x-access-token: <ACCESS_TOKEN>
+
+Thay <SELLER_ID> bằng ID của user muốn follow
+Thay <ACCESS_TOKEN> bằng token từ login ở bước 3
+
+Body: (trống)
+
+Response (201):
+{
+  "message": "Successfully followed user",
+  "follow": {
+    "id": 5,
+    "follower_id": 1,
+    "seller_id": 2,
+    "created_at": "2025-11-15T10:30:00.000Z"
+  }
+}
+
+
+===============================================
+5. CHECK IF FOLLOWING
+===============================================
+GET /api/follow/<SELLER_ID>/check-follow
+x-access-token: <ACCESS_TOKEN>
+
+Thay <SELLER_ID> bằng ID của user
+Thay <ACCESS_TOKEN> bằng token từ login
+
+Response (200):
+{
+  "is_following": true
+}
+
+
+===============================================
+6. GET FOLLOWER COUNT (Public)
+===============================================
+GET /api/follow/<SELLER_ID>/followers-count
+
+Thay <SELLER_ID> bằng ID của user
+
+Response (200):
+{
+  "seller_id": 2,
+  "follower_count": 5
+}
+
+
+===============================================
+7. GET FOLLOWERS LIST (Public)
+===============================================
+GET /api/follow/<SELLER_ID>/followers?limit=10&offset=0
+
+Thay <SELLER_ID> bằng ID của user
+Query params: limit=10, offset=0
+
+Response (200):
+{
+  "seller_id": 2,
+  "limit": 10,
+  "offset": 0,
+  "followers": [
+    {
+      "id": 1,
+      "username": "testuser123",
+      "avatar_url": null,
+      "created_at": "2025-11-15T09:00:00.000Z"
+    }
+  ]
+}
+
+
+===============================================
+8. GET FOLLOWING COUNT (Protected)
+===============================================
+GET /api/follow/me/following-count
+x-access-token: <ACCESS_TOKEN>
+
+Thay <ACCESS_TOKEN> bằng token từ login
+
+Response (200):
+{
+  "user_id": 1,
+  "following_count": 3
+}
+
+
+===============================================
+9. GET FOLLOWING LIST (Protected)
+===============================================
+GET /api/follow/me/following?limit=10&offset=0
+x-access-token: <ACCESS_TOKEN>
+
+Thay <ACCESS_TOKEN> bằng token từ login
+Query params: limit=10, offset=0
+
+Response (200):
+{
+  "user_id": 1,
+  "limit": 10,
+  "offset": 0,
+  "following": [
+    {
+      "id": 2,
+      "username": "seller_user",
+      "avatar_url": null,
+      "created_at": "2025-11-15T09:30:00.000Z"
+    }
+  ]
+}
+
+
+===============================================
+10. UNFOLLOW USER
+===============================================
+DELETE /api/follow/<SELLER_ID>/unfollow
+x-access-token: <ACCESS_TOKEN>
+
+Thay <SELLER_ID> bằng ID của user muốn bỏ follow
+Thay <ACCESS_TOKEN> bằng token từ login
+
+Response (200):
+{
+  "message": "Successfully unfollowed user"
+}
+
+
+===============================================
+GHI CHÚ
+===============================================
+
+1. Header Authentication:
+   - Các API có "Protected" cần gắn header: x-access-token: <TOKEN>
+   - Token lấy từ /api/auth/login
+
+2. Token Header Format:
+   Header: x-access-token
+   Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+3. Lấy ID từ Database:
+   - Query seller ID: SELECT id FROM users WHERE username = 'seller_user';
+   - Query user ID: SELECT id FROM users WHERE email = 'testuser123@example.com';
+
+4. Public vs Protected:
+   - Public: không cần token (6, 7)
+   - Protected: cần token (5, 8, 9, 10)
